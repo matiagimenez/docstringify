@@ -1,0 +1,58 @@
+[build-system]
+build-backend = "setuptools.build_meta"
+
+requires = [
+  "setuptools",
+  "setuptools-scm",
+]
+
+[project]
+name = "docstringify"
+description = "Flag missing docstrings and, optionally, generate them from signatures and type annotations."
+readme = "README.md"
+keywords = [
+  "docstring generation",
+  "ast",
+  "numpydoc-style docstring",
+  "google-style docstring",
+  "pre-commit",
+]
+license = { file = "LICENSE" }
+authors = [
+  { name = "Stefanie Molin", email = "docstringify@stefaniemolin.com" },
+]
+requires-python = ">=3.8"
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "License :: OSI Approved :: Apache Software License",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+]
+dynamic = [
+  "version",
+]
+
+dependencies = []
+optional-dependencies.dev = [
+  "pre-commit",
+  "pytest",
+  "pytest-cov",
+  "pytest-randomly",
+]
+urls.Documentation = "https://github.com/stefmolin/docstringify"
+urls.Homepage = "https://github.com/stefmolin/docstringify"
+urls.Source = "https://github.com/stefmolin/docstringify"
+
+[tool.setuptools.packages.find]
+where = [
+  "src",
+]
+
+[tool.setuptools.dynamic]
+version = { attr = "docstringify.__version__" }
