@@ -1,27 +1,47 @@
+from __future__ import annotations
+
 import ast
-import itertools
 from pathlib import Path
+from typing import TYPE_CHECKING, Literal
+
+from .converters.numpydoc import NumpydocDocstringConverter
+from .parameter import NO_DEFAULT, Parameter
+
+if TYPE_CHECKING:
+    from .converters.base import DocstringConverter
 
 
 class DocstringVisitor(ast.NodeVisitor):
-    def __init__(self, filename: str) -> None:
+    def __init__(
+        self, filename: str, converter: DocstringConverter | None = None
+    ) -> None:
         self.source_file = Path(filename)
         self.source_code = self.source_file.read_text()
+        self.provide_hints = converter is not None
+        if self.provide_hints:
+            self.converter = converter  # TODO: consider whether this should be instantiated here instead of outside
 
-    def _extract_default_values(self, default, is_keyword_only, no_default) -> str:
-        # Need to do it this way on Python <3.12 because they don't support nested f-strings yet
-        if (not is_keyword_only and default is not no_default) or (
+    def _extract_default_values(
+        self, default: ast.Constant | None | Literal[NO_DEFAULT], is_keyword_only: bool
+    ) -> str | Literal[NO_DEFAULT]:
+        if (not is_keyword_only and default is not NO_DEFAULT) or (
             is_keyword_only and default
         ):
-            value = (
-                f'"{default.value}"'
-                if isinstance(default.value, str)
-                else default.value
-            )
-            return f', default {value}'
-        return ''
+            try:
+                default_value = default.value
+            except AttributeError:
+                default_value = f'`{default.id}`'
 
-    def extract_arguments(self, node):
+            return (
+                f'"{default_value}"'
+                if isinstance(default_value, str) and not default_value.startswith('`')
+                else default_value
+            )
+        return NO_DEFAULT
+
+    def extract_arguments(
+        self, node: ast.AsyncFunctionDef | ast.FunctionDef
+    ) -> tuple[Parameter, ...]:
         modifiers = {
             'posonlyargs': 'positional-only',
             'kwonlyargs': 'keyword-only',
@@ -29,11 +49,10 @@ class DocstringVisitor(ast.NodeVisitor):
         params = []
 
         positional_arguments_count = len(node.args.posonlyargs) + len(node.args.args)
-        no_default = object()
         if (
             default_count := len(positional_defaults := node.args.defaults)
         ) < positional_arguments_count:
-            positional_defaults = [no_default] * (
+            positional_defaults = [NO_DEFAULT] * (
                 positional_arguments_count - default_count
             ) + positional_defaults
 
@@ -45,19 +64,28 @@ class DocstringVisitor(ast.NodeVisitor):
                 continue
             modifier = modifiers.get(arg_type)
             if arg_type in ['vararg', 'kwarg']:
-                if args and arg_type == 'vararg':
-                    params.append(f'*{args.arg}')
-                if args and arg_type == 'kwarg':
-                    params.append(f'**{args.arg}')
+                if args:
+                    params.append(
+                        Parameter(
+                            name=f'*{args.arg}'
+                            if arg_type == 'vararg'
+                            else f'**{args.arg}',
+                            type_=getattr(args.annotation, 'id', '__type__'),
+                            category=modifier,
+                            default=NO_DEFAULT,
+                        )
+                    )
             else:
                 is_keyword_only = arg_type.startswith('kw')
                 params.extend(
                     [
-                        (
-                            f'{arg.arg} : {getattr(arg.annotation, "id", "__type__")}'
-                            f'{f", {modifier}" if modifier else ""}'
-                            f'{self._extract_default_values(default, is_keyword_only, no_default)}'
-                            # f'{f", default {f'"{default.value}"' if isinstance(default.value, str) else default.value}" if (not is_keyword_only and default is not no_default) or (is_keyword_only and default) else ""}'
+                        Parameter(
+                            name=arg.arg,
+                            type_=getattr(arg.annotation, 'id', '__type__'),
+                            category=modifier,
+                            default=self._extract_default_values(
+                                default, is_keyword_only
+                            ),
                         )
                         for arg, default in zip(
                             args,
@@ -71,11 +99,17 @@ class DocstringVisitor(ast.NodeVisitor):
                     processed_positional_args += len(args)
 
         params = tuple(params)
-        if params and params[0].startswith(('self', 'cls')):
+        if (
+            params
+            and isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef)
+            and params[0].name.startswith(('self', 'cls'))
+        ):
             return params[1:]
         return params
 
-    def extract_returns(self, node):
+    def extract_returns(
+        self, node: ast.AsyncFunctionDef | ast.FunctionDef
+    ) -> str | None:
         if return_node := node.returns:
             if isinstance(return_node, ast.Constant):
                 return return_node.value
@@ -96,37 +130,35 @@ class DocstringVisitor(ast.NodeVisitor):
             return '__return_type__'
         return return_node
 
-    def suggest_docstring(self, node) -> str:
-        docstring = ['"""', '__description__']
-
-        if parameters := self.extract_arguments(node):
-            docstring.extend(
-                [
-                    '',
-                    'Parameters',
-                    '----------',
-                    *[
-                        line
-                        for couplet in zip(
-                            parameters, itertools.repeat('    __description__')
-                        )
-                        for line in couplet
-                    ],
-                ]
+    def suggest_docstring(
+        self, node: ast.AsyncFunctionDef | ast.ClassDef | ast.FunctionDef | ast.Module
+    ) -> str:
+        if isinstance(node, ast.AsyncFunctionDef | ast.FunctionDef):
+            return self.converter.to_docstring(
+                self.extract_arguments(node), self.extract_returns(node)
             )
+        raise NotImplementedError(
+            'Docstrings for classes and modules are not supported yet'
+        )
 
-        if returns := self.extract_returns(node):
-            docstring.extend(['', 'Returns', '-------', returns, '    __description__'])
+    def process_docstring(
+        self, node: ast.AsyncFunctionDef | ast.ClassDef | ast.FunctionDef | ast.Module
+    ) -> None:
+        if not ast.get_docstring(node):
+            # TODO: print class.method() instead of just the method name
+            # TODO: print module name with each
+            print(f'Function {node.name}() is missing a docstring')
+            if self.converter:
+                print('Hint:')
+                print(self.suggest_docstring(node))
+                print()
 
-        return '\n'.join([*docstring, '"""'])
+    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:  # noqa: N802
+        self.process_docstring(node)
+        self.generic_visit(node)
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:  # noqa: N802
-        if not ast.get_docstring(node):
-            print(f'Function {node.name}() is missing a docstring')
-            print('Hint:')
-            print(self.suggest_docstring(node))
-            print()
-
+        self.process_docstring(node)
         self.generic_visit(node)
 
     def process_file(self) -> None:
@@ -134,5 +166,8 @@ class DocstringVisitor(ast.NodeVisitor):
 
 
 if __name__ == '__main__':
-    visitor = DocstringVisitor('hello_world.py')
+    visitor = DocstringVisitor(
+        'test_file.py',
+        converter=NumpydocDocstringConverter(),
+    )
     visitor.process_file()
