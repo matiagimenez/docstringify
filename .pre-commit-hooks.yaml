@@ -4,4 +4,5 @@
     Flag missing docstrings and, optionally, generate them from signatures and type annotations.
   entry: docstringify
   language: python
+  serial: true
   types: [python]

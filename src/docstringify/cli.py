@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import sys
 from typing import Sequence
 
 from . import __version__
@@ -54,7 +55,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         missing_docstrings += visitor.missing_docstrings
         docstrings_processed += visitor.docstrings_inspected
 
-    if missing_docstrings / docstrings_processed < args.threshold:
+    if docstrings_processed and (
+        missing_percentage := (missing_docstrings / docstrings_processed)
+    ) > (1 - args.threshold):
+        print(f'Missing {missing_percentage:.0%} of docstrings', file=sys.stderr)
+        print(
+            f'Your settings require {args.threshold:.0%} of docstrings to be present',
+            file=sys.stderr,
+        )
         return 1
     return 0
 
