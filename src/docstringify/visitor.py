@@ -12,7 +12,6 @@ from .components import (
     Function,
     Parameter,
 )
-from .converters.numpydoc import NumpydocDocstringConverter
 
 if TYPE_CHECKING:
     from .converters.base import DocstringConverter
@@ -22,15 +21,18 @@ class DocstringVisitor(ast.NodeVisitor):
     def __init__(
         self, filename: str, converter: DocstringConverter | None = None
     ) -> None:
-        self.source_file = Path(filename)
-        self.source_code = self.source_file.read_text()
+        self.source_file: Path = Path(filename)
+        self.source_code: str = self.source_file.read_text()
+
+        self.docstrings_inspected: int = 0
+        self.missing_docstrings: int = 0
 
         self.module_name: str = self.source_file.stem
         self.stack: list[str] = []
 
-        self.provide_hints = converter is not None
+        self.provide_hints: bool = converter is not None
         if self.provide_hints:
-            self.converter = converter  # TODO: consider whether this should be instantiated here instead of outside
+            self.converter: DocstringVisitor = converter  # TODO: consider whether this should be instantiated here instead of outside
 
     def _extract_default_values(
         self, default: ast.Constant | None | Literal[NO_DEFAULT], is_keyword_only: bool
@@ -146,6 +148,7 @@ class DocstringVisitor(ast.NodeVisitor):
         return return_node
 
     def report_missing_docstring(self) -> None:
+        self.missing_docstrings += 1
         print(f'{".".join(self.stack)} is missing a docstring', file=sys.stderr)
 
     def suggest_docstring(
@@ -169,10 +172,12 @@ class DocstringVisitor(ast.NodeVisitor):
     ) -> None:
         if not ast.get_docstring(node):
             self.report_missing_docstring()
-            if self.converter:
+            if self.provide_hints:
                 print('Hint:')
                 print(self.suggest_docstring(node))
                 print()
+
+        self.docstrings_inspected += 1
 
     def visit(self, node: ast.AST) -> None:
         if isinstance(
@@ -189,11 +194,3 @@ class DocstringVisitor(ast.NodeVisitor):
 
     def process_file(self) -> None:
         self.visit(ast.parse(self.source_code))
-
-
-if __name__ == '__main__':
-    visitor = DocstringVisitor(
-        'test_file.py',
-        converter=NumpydocDocstringConverter(),
-    )
-    visitor.process_file()

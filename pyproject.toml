@@ -11,10 +11,9 @@ name = "docstringify"
 description = "Flag missing docstrings and, optionally, generate them from signatures and type annotations."
 readme = "README.md"
 keywords = [
-  "docstring generation",
   "ast",
+  "docstring generation",
   "numpydoc-style docstring",
-  "google-style docstring",
   "pre-commit",
 ]
 license = { file = "LICENSE" }
@@ -38,7 +37,7 @@ dynamic = [
   "version",
 ]
 
-dependencies = []
+dependencies = [  ]
 optional-dependencies.dev = [
   "pre-commit",
   "pytest",
@@ -48,6 +47,7 @@ optional-dependencies.dev = [
 urls.Documentation = "https://github.com/stefmolin/docstringify"
 urls.Homepage = "https://github.com/stefmolin/docstringify"
 urls.Source = "https://github.com/stefmolin/docstringify"
+scripts.docstringify = "docstringify.cli:main"
 
 [tool.setuptools.packages.find]
 where = [
