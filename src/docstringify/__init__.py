@@ -3,4 +3,4 @@ Flag missing docstrings and, optionally, generate them from signatures and
 type annotations.
 """
 
-__version__ = '0.1.0'
+__version__ = '0.1.1'
