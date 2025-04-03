@@ -66,8 +66,8 @@ Then, use the `DocstringVisitor()` class on individual files to see spots where 
 >>> from docstringify.visitor import DocstringVisitor
 >>> visitor = DocstringVisitor('test.py')
 >>> visitor.process_file()
-test_file is missing a docstring
-test_file.say_hello is missing a docstring
+test is missing a docstring
+test.say_hello is missing a docstring
 ```
 
 If you would like to see suggested docstring templates (inferred from type annotations for functions and methods), provide a converter:
@@ -77,11 +77,11 @@ If you would like to see suggested docstring templates (inferred from type annot
 >>> from docstringify.visitor import DocstringVisitor
 >>> visitor = DocstringVisitor('test.py', converter=NumpydocDocstringConverter())
 >>> visitor.process_file()
-test_file is missing a docstring
+test is missing a docstring
 Hint:
 """__description__"""
 
-test_file.say_hello is missing a docstring
+test.say_hello is missing a docstring
 Hint:
 """
 __description__
