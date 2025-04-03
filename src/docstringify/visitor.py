@@ -1,11 +1,18 @@
 from __future__ import annotations
 
 import ast
+import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 
+from .components import (
+    NO_DEFAULT,
+    PARAMETER_TYPE_PLACEHOLDER,
+    RETURN_TYPE_PLACEHOLDER,
+    Function,
+    Parameter,
+)
 from .converters.numpydoc import NumpydocDocstringConverter
-from .parameter import NO_DEFAULT, Parameter
 
 if TYPE_CHECKING:
     from .converters.base import DocstringConverter
@@ -17,6 +24,10 @@ class DocstringVisitor(ast.NodeVisitor):
     ) -> None:
         self.source_file = Path(filename)
         self.source_code = self.source_file.read_text()
+
+        self.module_name: str = self.source_file.stem
+        self.stack: list[str] = []
+
         self.provide_hints = converter is not None
         if self.provide_hints:
             self.converter = converter  # TODO: consider whether this should be instantiated here instead of outside
@@ -70,7 +81,9 @@ class DocstringVisitor(ast.NodeVisitor):
                             name=f'*{args.arg}'
                             if arg_type == 'vararg'
                             else f'**{args.arg}',
-                            type_=getattr(args.annotation, 'id', '__type__'),
+                            type_=getattr(
+                                args.annotation, 'id', PARAMETER_TYPE_PLACEHOLDER
+                            ),
                             category=modifier,
                             default=NO_DEFAULT,
                         )
@@ -81,7 +94,9 @@ class DocstringVisitor(ast.NodeVisitor):
                     [
                         Parameter(
                             name=arg.arg,
-                            type_=getattr(arg.annotation, 'id', '__type__'),
+                            type_=getattr(
+                                arg.annotation, 'id', PARAMETER_TYPE_PLACEHOLDER
+                            ),
                             category=modifier,
                             default=self._extract_default_values(
                                 default, is_keyword_only
@@ -127,39 +142,50 @@ class DocstringVisitor(ast.NodeVisitor):
             or return_value.value
             for body_return_node in return_nodes
         ):
-            return '__return_type__'
+            return RETURN_TYPE_PLACEHOLDER
         return return_node
+
+    def report_missing_docstring(self) -> None:
+        print(f'{".".join(self.stack)} is missing a docstring', file=sys.stderr)
 
     def suggest_docstring(
         self, node: ast.AsyncFunctionDef | ast.ClassDef | ast.FunctionDef | ast.Module
     ) -> str:
         if isinstance(node, ast.AsyncFunctionDef | ast.FunctionDef):
-            return self.converter.to_docstring(
-                self.extract_arguments(node), self.extract_returns(node)
+            return self.converter.to_function_docstring(
+                Function(self.extract_arguments(node), self.extract_returns(node))
             )
-        raise NotImplementedError(
-            'Docstrings for classes and modules are not supported yet'
-        )
+
+        if isinstance(node, ast.Module):
+            return self.converter.to_module_docstring(self.module_name)
+
+        # TODO: with the stack, I should be able to let __init__() not have a docstring
+        # and suggest those parameters as the docstring for the class
+        # (may need to keep the class node in another stack)
+        return self.converter.to_class_docstring(node.name)
 
     def process_docstring(
         self, node: ast.AsyncFunctionDef | ast.ClassDef | ast.FunctionDef | ast.Module
     ) -> None:
         if not ast.get_docstring(node):
-            # TODO: print class.method() instead of just the method name
-            # TODO: print module name with each
-            print(f'Function {node.name}() is missing a docstring')
+            self.report_missing_docstring()
             if self.converter:
                 print('Hint:')
                 print(self.suggest_docstring(node))
                 print()
 
-    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:  # noqa: N802
-        self.process_docstring(node)
-        self.generic_visit(node)
+    def visit(self, node: ast.AST) -> None:
+        if isinstance(
+            node, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)
+        ):
+            self.stack.append(
+                self.module_name if isinstance(node, ast.Module) else node.name
+            )
 
-    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:  # noqa: N802
-        self.process_docstring(node)
-        self.generic_visit(node)
+            self.process_docstring(node)
+
+            self.generic_visit(node)
+            _ = self.stack.pop()
 
     def process_file(self) -> None:
         self.visit(ast.parse(self.source_code))

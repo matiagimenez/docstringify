@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ..parameter import Parameter
+    from ..components import Function, Parameter
 
 
 class DocstringConverter(ABC):
@@ -17,9 +17,15 @@ class DocstringConverter(ABC):
         self.returns_section_template = returns_section_template
 
     @abstractmethod
-    def to_docstring(
-        self, parameters: tuple[Parameter, ...], return_type: str | None
-    ) -> str:
+    def to_class_docstring(self, class_name: str) -> str:
+        pass
+
+    @abstractmethod
+    def to_function_docstring(self, function: Function) -> str:
+        pass
+
+    @abstractmethod
+    def to_module_docstring(self, module_name: str) -> str:
         pass
 
     @abstractmethod
