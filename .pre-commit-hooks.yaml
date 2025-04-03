@@ -1,0 +1,7 @@
+- id: docstringify
+  name: docstringify
+  description: |
+    Flag missing docstrings and, optionally, generate them from signatures and type annotations.
+  entry: docstringify
+  language: python
+  types: [python]
