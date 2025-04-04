@@ -13,6 +13,7 @@ readme = "README.md"
 keywords = [
   "ast",
   "docstring generation",
+  "google-style docstring",
   "numpydoc-style docstring",
   "pre-commit",
 ]

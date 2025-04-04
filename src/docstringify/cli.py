@@ -5,6 +5,7 @@ import sys
 from typing import Sequence
 
 from . import __version__
+from .converters.google import GoogleDocstringConverter
 from .converters.numpydoc import NumpydocDocstringConverter
 from .visitor import DocstringVisitor
 
@@ -25,11 +26,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument(
         '--suggest-changes',
         action='store_true',
-        help='Whether to provide docstring templates for items missing docstrings',
+        help='Whether to print out docstring templates for items missing docstrings',
     )
     parser.add_argument(
         '--style',
-        choices=['numpydoc'],
+        choices=['google', 'numpydoc'],
         default='numpydoc',
         help='The style of docstring to use (only used when --suggest-changes is passed)',
     )
@@ -43,6 +44,8 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if args.style is None or not args.suggest_changes:
         converter = None
+    elif args.style == 'google':
+        converter = GoogleDocstringConverter()
     elif args.style == 'numpydoc':
         converter = NumpydocDocstringConverter()
     else:
