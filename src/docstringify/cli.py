@@ -5,8 +5,7 @@ import sys
 from typing import Sequence
 
 from . import __version__
-from .converters.google import GoogleDocstringConverter
-from .converters.numpydoc import NumpydocDocstringConverter
+from .converters import GoogleDocstringConverter, NumpydocDocstringConverter
 from .visitor import DocstringVisitor
 
 PROG = __package__

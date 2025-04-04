@@ -9,7 +9,7 @@ Add the following to your `.pre-commit-config.yaml` file to block commits with m
 
 ```yaml
 - repo: https://github.com/stefmolin/docstringify
-  rev: 0.1.1
+  rev: 0.2.0
   hooks:
     - id: docstringify
 ```
@@ -18,20 +18,30 @@ By default, all docstrings are required. If you want to be more lenient, you can
 
 ```yaml
 - repo: https://github.com/stefmolin/docstringify
-  rev: 0.1.1
+  rev: 0.2.0
   hooks:
     - id: docstringify
       args: [--threshold=0.75]
 ```
 
-If you would like to see suggested docstring templates (inferred from type annotations for functions and methods), provide the `--suggest-changes` argument. By default, these will be [numpydoc-style docstrings](https://numpydoc.readthedocs.io/en/latest/format.html#); support for Google-style docstrings will come in a future release:
+If you would like to see suggested docstring templates (inferred from type annotations for functions and methods), provide the `--suggest-changes` argument. By default, these will be [numpydoc-style docstrings](https://numpydoc.readthedocs.io/en/latest/format.html#):
 
 ```yaml
 - repo: https://github.com/stefmolin/docstringify
-  rev: 0.1.1
+  rev: 0.2.0
   hooks:
     - id: docstringify
       args: [--suggest-changes]
+```
+
+For [Google-style docstrings](https://www.sphinx-doc.org/en/master/usage/extensions/example_google.html), specify `--style google`:
+
+```yaml
+- repo: https://github.com/stefmolin/docstringify
+  rev: 0.2.0
+  hooks:
+    - id: docstringify
+      args: [--suggest-changes, --style=google]
 ```
 
 Be sure to check out the [pre-commit documentation](https://pre-commit.com/#pre-commit-configyaml---hooks) for additional configuration options.
@@ -73,7 +83,7 @@ test.say_hello is missing a docstring
 If you would like to see suggested docstring templates (inferred from type annotations for functions and methods), provide a converter:
 
 ```pycon
->>> from docstringify.converters.numpydoc import NumpydocDocstringConverter
+>>> from docstringify.converters import NumpydocDocstringConverter
 >>> from docstringify.visitor import DocstringVisitor
 >>> visitor = DocstringVisitor('test.py', converter=NumpydocDocstringConverter())
 >>> visitor.process_file()

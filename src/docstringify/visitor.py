@@ -14,7 +14,7 @@ from .components import (
 )
 
 if TYPE_CHECKING:
-    from .converters.base import DocstringConverter
+    from .converters import DocstringConverter
 
 
 class DocstringVisitor(ast.NodeVisitor):
