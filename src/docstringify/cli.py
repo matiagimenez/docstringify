@@ -2,13 +2,21 @@ from __future__ import annotations
 
 import argparse
 import sys
+from functools import partial
 from typing import Sequence
 
 from . import __version__
 from .converters import GoogleDocstringConverter, NumpydocDocstringConverter
+from .transformer import DocstringTransformer
 from .visitor import DocstringVisitor
 
 PROG = __package__
+
+STYLES = {
+    'google': GoogleDocstringConverter,
+    'numpydoc': NumpydocDocstringConverter,
+}
+CLI_DEFAULTS = {'threshold': 1.0}
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -22,45 +30,60 @@ def main(argv: Sequence[str] | None = None) -> int:
         '--version', action='version', version=f'%(prog)s {__version__}'
     )
 
-    parser.add_argument(
+    run_group = parser.add_argument_group('Run options')
+    handle_missing_docstring = run_group.add_mutually_exclusive_group(required=False)
+    handle_missing_docstring.add_argument(
+        '--make-changes',
+        choices=STYLES.keys(),
+        help='Whether to insert docstring templates for items missing docstrings',
+    )
+    handle_missing_docstring.add_argument(
+        '--make-changes-inplace',
+        choices=STYLES.keys(),
+        help=(
+            'Whether to insert docstring templates for items missing docstrings, '
+            'overwriting the original file'
+        ),
+    )
+    handle_missing_docstring.add_argument(
         '--suggest-changes',
-        action='store_true',
+        choices=STYLES.keys(),
         help='Whether to print out docstring templates for items missing docstrings',
     )
-    parser.add_argument(
-        '--style',
-        choices=['google', 'numpydoc'],
-        default='numpydoc',
-        help='The style of docstring to use (only used when --suggest-changes is passed)',
-    )
-    parser.add_argument(
+    run_group.add_argument(
         '--threshold',
         type=float,
-        default=1,
+        default=CLI_DEFAULTS['threshold'],
         help='The percentage of docstrings that must be present to pass',
     )
     args = parser.parse_args(argv)
 
-    if args.style is None or not args.suggest_changes:
-        converter = None
-    elif args.style == 'google':
-        converter = GoogleDocstringConverter()
-    elif args.style == 'numpydoc':
-        converter = NumpydocDocstringConverter()
+    if style := args.make_changes or args.make_changes_inplace or args.suggest_changes:
+        converter = STYLES[style]
     else:
-        raise NotImplementedError(f'{args.style} is not a supported option')
+        converter = None
+
+    get_docstring_processor = (
+        partial(
+            DocstringTransformer,
+            converter=converter,
+            **{'overwrite': bool(args.make_changes_inplace)},
+        )
+        if args.make_changes or args.make_changes_inplace
+        else partial(DocstringVisitor, converter=converter)
+    )
 
     docstrings_processed = missing_docstrings = 0
     for file in args.filenames:
-        visitor = DocstringVisitor(file, converter=converter)
-        visitor.process_file()
-        missing_docstrings += visitor.missing_docstrings
-        docstrings_processed += visitor.docstrings_inspected
+        processor = get_docstring_processor(file)
+        processor.process_file()
+        missing_docstrings += processor.missing_docstrings
+        docstrings_processed += processor.docstrings_inspected
 
     if docstrings_processed and (
         missing_percentage := (missing_docstrings / docstrings_processed)
     ) > (1 - args.threshold):
-        print(f'Missing {missing_percentage:.0%} of docstrings', file=sys.stderr)
+        print(f'\nMissing {missing_percentage:.0%} of docstrings', file=sys.stderr)
         print(
             f'Your settings require {args.threshold:.0%} of docstrings to be present',
             file=sys.stderr,

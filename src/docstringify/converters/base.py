@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import textwrap
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
+
+from ..exceptions import InvalidDocstringError
 
 if TYPE_CHECKING:
     from ..components import Function, Parameter
@@ -11,17 +14,21 @@ if TYPE_CHECKING:
 
 class DocstringConverter(ABC):
     def __init__(
-        self, parameters_section_template: str, returns_section_template: str
+        self,
+        parameters_section_template: str,
+        returns_section_template: str,
+        quote: bool,
     ) -> None:
         self.parameters_section_template = parameters_section_template
         self.returns_section_template = returns_section_template
+        self._quote = quote
 
     @abstractmethod
-    def to_class_docstring(self, class_name: str) -> str:
+    def to_class_docstring(self, class_name: str, indent: int) -> str:
         pass
 
     @abstractmethod
-    def to_function_docstring(self, function: Function) -> str:
+    def to_function_docstring(self, function: Function, indent: int) -> str:
         pass
 
     @abstractmethod
@@ -49,3 +56,18 @@ class DocstringConverter(ABC):
         if return_text := self.format_return(return_type):
             return self.returns_section_template.format(returns=return_text)
         return ''
+
+    def quote_docstring(self, docstring: str | list[str], indent: int) -> str:
+        quote = '"""' if self._quote else ''
+        prefix = sep = ''
+        if isinstance(docstring, str):
+            docstring = [quote, docstring, quote]
+        elif isinstance(docstring, list):
+            if len(docstring) > 1:
+                prefix = ' ' * indent if indent else ''
+                sep = '\n'
+            docstring = [quote, *docstring, f'{prefix}{quote}']
+        else:
+            raise InvalidDocstringError(type(docstring).__name__)
+
+        return textwrap.indent(sep.join(docstring), prefix)
