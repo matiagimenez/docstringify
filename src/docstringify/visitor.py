@@ -32,7 +32,7 @@ class DocstringVisitor(ast.NodeVisitor):
 
         self.provide_hints: bool = converter is not None
         if self.provide_hints:
-            self.converter: DocstringVisitor = converter  # TODO: consider whether this should be instantiated here instead of outside
+            self.converter: DocstringConverter = converter
 
     def _extract_default_values(
         self, default: ast.Constant | None | Literal[NO_DEFAULT], is_keyword_only: bool
