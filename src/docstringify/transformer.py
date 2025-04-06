@@ -42,12 +42,19 @@ class DocstringTransformer(ast.NodeTransformer, DocstringVisitor):
         suggested_docstring = self.docstring_generator.suggest_docstring(
             node, indent=0 if isinstance(node, ast.Module) else node.col_offset + 4
         )
-        docstring = ast.Expr(ast.Constant(suggested_docstring))
-        node.body.insert(0, docstring)
+        docstring_node = ast.Expr(ast.Constant(suggested_docstring))
+
+        if (
+            current_docstring := ast.get_docstring(node)
+        ) is not None and current_docstring.strip() == '':
+            # If the docstring is empty, we replace it with the suggested docstring
+            node.body[0] = docstring_node
+        else:
+            # If the docstring is missing, we insert the suggested docstring
+            node.body.insert(0, docstring_node)
         return ast.fix_missing_locations(node)
 
     def process_file(self) -> ast.Module:
-        root = ast.parse(self.source_code)
-        new_ast = self.visit(root)
-        self.save(new_ast)
-        return new_ast
+        tree = self.visit(ast.parse(self.source_code))
+        self.save(tree)
+        return tree

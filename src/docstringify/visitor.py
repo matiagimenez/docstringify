@@ -24,14 +24,16 @@ class DocstringVisitor(ast.NodeVisitor):
         self.module_name: str = self.source_file.stem
         self.stack: list[str] = []
 
-        self.provide_hints: bool = converter is not None
-        if self.provide_hints:
-            self.docstring_generator = DocstringGenerator(
+        self.docstring_generator: DocstringGenerator | None = (
+            DocstringGenerator(
                 converter,
                 self.module_name,
                 self.source_code,
                 quote=not issubclass(self.__class__, ast.NodeTransformer),
             )
+            if converter
+            else None
+        )
 
     def report_missing_docstring(self) -> None:
         self.missing_docstrings += 1
@@ -40,7 +42,7 @@ class DocstringVisitor(ast.NodeVisitor):
     def handle_missing_docstring(
         self, node: ast.AsyncFunctionDef | ast.ClassDef | ast.FunctionDef | ast.Module
     ) -> ast.AsyncFunctionDef | ast.ClassDef | ast.FunctionDef | ast.Module:
-        if self.provide_hints:
+        if self.docstring_generator:
             print('Hint:')
             print(self.docstring_generator.suggest_docstring(node))
             print()
@@ -49,26 +51,39 @@ class DocstringVisitor(ast.NodeVisitor):
     def process_docstring(
         self, node: ast.AsyncFunctionDef | ast.ClassDef | ast.FunctionDef | ast.Module
     ) -> ast.AsyncFunctionDef | ast.ClassDef | ast.FunctionDef | ast.Module:
-        if not ast.get_docstring(node):
+        if (docstring := ast.get_docstring(node)) is None or docstring.strip() == '':
             self.report_missing_docstring()
             node = self.handle_missing_docstring(node)
 
         self.docstrings_inspected += 1
         return node
 
-    def visit(self, node: ast.AST) -> ast.AST:
-        if isinstance(
-            node, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)
-        ):
-            self.stack.append(
-                self.module_name if isinstance(node, ast.Module) else node.name
-            )
+    def visit_node_docstring(
+        self, node: ast.AST
+    ) -> ast.AsyncFunctionDef | ast.ClassDef | ast.FunctionDef | ast.Module:
+        self.stack.append(
+            self.module_name if isinstance(node, ast.Module) else node.name
+        )
 
-            node = self.process_docstring(node)
+        node = self.process_docstring(node)
 
-            self.generic_visit(node)
-            _ = self.stack.pop()
+        self.generic_visit(node)
+        _ = self.stack.pop()
         return node
+
+    def visit_Module(self, node: ast.Module) -> ast.Module:  # noqa: N802
+        return self.visit_node_docstring(node)
+
+    def visit_ClassDef(self, node: ast.ClassDef) -> ast.ClassDef:  # noqa: N802
+        return self.visit_node_docstring(node)
+
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.FunctionDef:  # noqa: N802
+        return self.visit_node_docstring(node)
+
+    def visit_AsyncFunctionDef(  # noqa: N802
+        self, node: ast.AsyncFunctionDef
+    ) -> ast.AsyncFunctionDef:
+        return self.visit_node_docstring(node)
 
     def process_file(self) -> ast.Module:
         root = self.visit(ast.parse(self.source_code))
