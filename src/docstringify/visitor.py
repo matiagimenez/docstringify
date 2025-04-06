@@ -17,6 +17,7 @@ class DocstringVisitor(ast.NodeVisitor):
     ) -> None:
         self.source_file: Path = Path(filename).expanduser().resolve()
         self.source_code: str = self.source_file.read_text()
+        self.tree: ast.Module = ast.parse(self.source_code)
 
         self.docstrings_inspected: int = 0
         self.missing_docstrings: int = 0
@@ -59,7 +60,7 @@ class DocstringVisitor(ast.NodeVisitor):
         return node
 
     def visit_node_docstring(
-        self, node: ast.AST
+        self, node: ast.AsyncFunctionDef | ast.ClassDef | ast.FunctionDef | ast.Module
     ) -> ast.AsyncFunctionDef | ast.ClassDef | ast.FunctionDef | ast.Module:
         self.stack.append(
             self.module_name if isinstance(node, ast.Module) else node.name
@@ -85,10 +86,8 @@ class DocstringVisitor(ast.NodeVisitor):
     ) -> ast.AsyncFunctionDef:
         return self.visit_node_docstring(node)
 
-    def process_file(self) -> ast.Module:
-        root = self.visit(ast.parse(self.source_code))
+    def process_file(self) -> None:
+        self.visit(self.tree)
 
         if not self.missing_docstrings:
             print(f'No missing docstrings found in {self.source_file}.')
-
-        return root

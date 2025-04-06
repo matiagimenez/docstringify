@@ -88,7 +88,7 @@ If you would like to see suggested docstring templates (inferred from type annot
 >>> from docstringify.converters import NumpydocDocstringConverter
 >>> from docstringify.visitor import DocstringVisitor
 >>> visitor = DocstringVisitor('test.py', converter=NumpydocDocstringConverter)
->>> _ = visitor.process_file()
+>>> visitor.process_file()
 test is missing a docstring
 Hint:
 """__description__"""

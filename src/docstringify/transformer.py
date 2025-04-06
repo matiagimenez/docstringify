@@ -16,7 +16,7 @@ class DocstringTransformer(ast.NodeTransformer, DocstringVisitor):
         super().__init__(filename, converter)
         self.overwrite = overwrite
 
-    def save(self, new_ast: ast.Module) -> None:
+    def save(self) -> None:
         if self.missing_docstrings:
             output = (
                 self.source_file
@@ -28,7 +28,7 @@ class DocstringTransformer(ast.NodeTransformer, DocstringVisitor):
                     + ''.join(self.source_file.suffixes)
                 )
             )
-            edited_code = ast.unparse(new_ast)
+            edited_code = ast.unparse(self.tree)
             output.write_text(edited_code)
             print(f'Docstring templates written to {output}')
         else:
@@ -55,6 +55,6 @@ class DocstringTransformer(ast.NodeTransformer, DocstringVisitor):
         return ast.fix_missing_locations(node)
 
     def process_file(self) -> ast.Module:
-        tree = self.visit(ast.parse(self.source_code))
-        self.save(tree)
-        return tree
+        self.tree = self.visit(self.tree)
+        self.save()
+        return self.tree
