@@ -75,7 +75,7 @@ $ python -m pip install docstringify
 Then, use the `DocstringVisitor()` class on individual files to see spots where docstrings are missing:
 
 ```pycon
->>> from docstringify.visitor import DocstringVisitor
+>>> from docstringify.traversal import DocstringVisitor
 >>> visitor = DocstringVisitor('test.py')
 >>> visitor.process_file()
 test is missing a docstring
@@ -86,7 +86,7 @@ If you would like to see suggested docstring templates (inferred from type annot
 
 ```pycon
 >>> from docstringify.converters import NumpydocDocstringConverter
->>> from docstringify.visitor import DocstringVisitor
+>>> from docstringify.traversal import DocstringVisitor
 >>> visitor = DocstringVisitor('test.py', converter=NumpydocDocstringConverter)
 >>> visitor.process_file()
 test is missing a docstring
@@ -110,7 +110,7 @@ To make changes to your files, you will need to use the `DocstringTransformer` i
 
 ```pycon
 >>> from docstringify.converters import GoogleDocstringConverter
->>> from docstringify.transformer import DocstringTransformer
+>>> from docstringify.traversal import DocstringTransformer
 >>> transformer = DocstringTransformer('test.py', converter=GoogleDocstringConverter)
 >>> _ = transformer.process_file()
 test is missing a docstring

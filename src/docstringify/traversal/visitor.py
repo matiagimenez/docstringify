@@ -62,14 +62,12 @@ class DocstringVisitor(ast.NodeVisitor):
     def visit_node_docstring(
         self, node: ast.AsyncFunctionDef | ast.ClassDef | ast.FunctionDef | ast.Module
     ) -> ast.AsyncFunctionDef | ast.ClassDef | ast.FunctionDef | ast.Module:
-        self.stack.append(
-            self.module_name if isinstance(node, ast.Module) else node.name
-        )
+        self.stack.append(getattr(node, 'name', self.module_name))
 
         node = self.process_docstring(node)
 
         self.generic_visit(node)
-        _ = self.stack.pop()
+        self.stack.pop()
         return node
 
     def visit_Module(self, node: ast.Module) -> ast.Module:  # noqa: N802

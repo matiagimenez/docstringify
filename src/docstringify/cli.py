@@ -7,8 +7,7 @@ from typing import Sequence
 
 from . import __version__
 from .converters import GoogleDocstringConverter, NumpydocDocstringConverter
-from .transformer import DocstringTransformer
-from .visitor import DocstringVisitor
+from .traversal import DocstringTransformer, DocstringVisitor
 
 PROG = __package__
 
