@@ -5,10 +5,10 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from .docstring_generator import DocstringGenerator
+from ..docstring_generator import DocstringGenerator
 
 if TYPE_CHECKING:
-    from .converters import DocstringConverter
+    from ..converters import DocstringConverter
 
 
 class DocstringVisitor(ast.NodeVisitor):

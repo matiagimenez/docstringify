@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from .visitor import DocstringVisitor
 
 if TYPE_CHECKING:
-    from .converters import DocstringConverter
+    from ..converters import DocstringConverter
 
 
 class DocstringTransformer(ast.NodeTransformer, DocstringVisitor):
