@@ -12,7 +12,10 @@ if TYPE_CHECKING:
 
 class DocstringTransformer(ast.NodeTransformer, DocstringVisitor):
     def __init__(
-        self, filename: str, converter: DocstringConverter, overwrite: bool = False
+        self,
+        filename: str,
+        converter: type[DocstringConverter],
+        overwrite: bool = False,
     ) -> None:
         super().__init__(filename, converter)
         self.overwrite = overwrite

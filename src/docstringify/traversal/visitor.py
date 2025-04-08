@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 class DocstringVisitor(ast.NodeVisitor):
     def __init__(
-        self, filename: str, converter: DocstringConverter | None = None
+        self, filename: str, converter: type[DocstringConverter] | None = None
     ) -> None:
         self.source_file: Path = Path(filename).expanduser().resolve()
         self.source_code: str = self.source_file.read_text()
