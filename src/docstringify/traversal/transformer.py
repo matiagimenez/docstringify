@@ -40,8 +40,8 @@ class DocstringTransformer(ast.NodeTransformer, DocstringVisitor):
         suggested_docstring = self.docstring_converter.suggest_docstring(
             docstring_node,
             indent=0
-            if isinstance(docstring_node.node, ast.Module)
-            else docstring_node.node.col_offset + 4,
+            if isinstance(docstring_node.ast_node, ast.Module)
+            else docstring_node.ast_node.col_offset + 4,
         )
         docstring_ast_node = ast.Expr(ast.Constant(suggested_docstring))
 
@@ -50,12 +50,12 @@ class DocstringTransformer(ast.NodeTransformer, DocstringVisitor):
             and docstring_node.docstring.strip() == ''
         ):
             # If the docstring is empty, we replace it with the suggested docstring
-            docstring_node.node.body[0] = docstring_ast_node
+            docstring_node.ast_node.body[0] = docstring_ast_node
         else:
             # If the docstring is missing, we insert the suggested docstring
-            docstring_node.node.body.insert(0, docstring_ast_node)
+            docstring_node.ast_node.body.insert(0, docstring_ast_node)
 
-        docstring_node.node = ast.fix_missing_locations(docstring_node.node)
+        docstring_node.ast_node = ast.fix_missing_locations(docstring_node.ast_node)
 
         return docstring_node
 

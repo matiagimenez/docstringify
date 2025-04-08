@@ -27,7 +27,7 @@ class FunctionDocstringNode(DocstringNode):
         ]
 
         self.is_method: bool = self.parent and isinstance(
-            self.parent.node, ast.ClassDef
+            self.parent.ast_node, ast.ClassDef
         )
         self.is_abstract_method: bool = self.is_method and (
             'abstractmethod' in self.decorators
@@ -139,7 +139,7 @@ class FunctionDocstringNode(DocstringNode):
         return params
 
     def _extract_return_annotation(self) -> str | None:
-        if return_annotation_node := self.node.returns:
+        if return_annotation_node := self.ast_node.returns:
             if isinstance(return_annotation_node, ast.Constant):
                 return return_annotation_node.value
             if isinstance(return_annotation_node, ast.Name):

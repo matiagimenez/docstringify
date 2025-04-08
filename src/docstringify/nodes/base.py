@@ -34,7 +34,7 @@ class DocstringNode:
         self.module_name: str = module_name
         self.parent: DocstringNode | None = parent
 
-        self.node: (  # TODO: rename this ast_node?
+        self.ast_node: (
             ast.Module | ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef
         ) = node
         self.name: str = getattr(node, 'name', self.module_name)

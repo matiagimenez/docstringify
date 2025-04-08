@@ -80,7 +80,7 @@ class DocstringConverter(ABC):
         docstring_node: DocstringNode,
         indent: int = 0,
     ) -> str:
-        if isinstance(docstring_node.node, ast.AsyncFunctionDef | ast.FunctionDef):
+        if isinstance(docstring_node.ast_node, ast.AsyncFunctionDef | ast.FunctionDef):
             return self.to_function_docstring(
                 Function(
                     docstring_node.extract_arguments(), docstring_node.extract_returns()
@@ -88,7 +88,7 @@ class DocstringConverter(ABC):
                 indent=indent,
             )
 
-        if isinstance(docstring_node.node, ast.Module):
+        if isinstance(docstring_node.ast_node, ast.Module):
             return self.to_module_docstring(docstring_node.module_name)
 
         return self.to_class_docstring(docstring_node.name, indent=indent)

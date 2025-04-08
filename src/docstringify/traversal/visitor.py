@@ -69,14 +69,12 @@ class DocstringVisitor(ast.NodeVisitor):
             parent=self.stack[-1] if self.stack else None,
         )
 
-        self.stack.append(docstring_node)  # TODO: call it docstringify_node?
+        self.stack.append(docstring_node)
 
-        docstring_node = self.process_docstring(
-            docstring_node
-        )  # TODO: shouldn't require docstring if typing.overload decorator is there
-        self.generic_visit(docstring_node.node)
+        docstring_node = self.process_docstring(docstring_node)
+        self.generic_visit(docstring_node.ast_node)
         self.stack.pop()
-        return docstring_node.node
+        return docstring_node.ast_node
 
     def visit_Module(self, node: ast.Module) -> ast.Module:  # noqa: N802
         return self.visit_docstring(node, DocstringNode)
