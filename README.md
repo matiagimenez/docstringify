@@ -112,7 +112,7 @@ To make changes to your files, you will need to use the `DocstringTransformer` i
 >>> from docstringify.converters import GoogleDocstringConverter
 >>> from docstringify.traversal import DocstringTransformer
 >>> transformer = DocstringTransformer('test.py', converter=GoogleDocstringConverter)
->>> _ = transformer.process_file()
+>>> transformer.process_file()
 test is missing a docstring
 test.say_hello is missing a docstring
 Docstring templates written to /.../test_docstringify.py
