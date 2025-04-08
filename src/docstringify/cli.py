@@ -82,7 +82,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     if docstrings_processed and (
         missing_percentage := (missing_docstrings / docstrings_processed)
     ) > (1 - args.threshold):
-        print(f'\nMissing {missing_percentage:.0%} of docstrings', file=sys.stderr)
+        print(f'Missing {missing_percentage:.0%} of docstrings', file=sys.stderr)
         print(
             f'Your settings require {args.threshold:.0%} of docstrings to be present',
             file=sys.stderr,

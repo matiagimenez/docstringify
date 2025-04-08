@@ -7,6 +7,7 @@ from .visitor import DocstringVisitor
 
 if TYPE_CHECKING:
     from ..converters import DocstringConverter
+    from ..nodes.base import DocstringNode
 
 
 class DocstringTransformer(ast.NodeTransformer, DocstringVisitor):
@@ -31,30 +32,30 @@ class DocstringTransformer(ast.NodeTransformer, DocstringVisitor):
             edited_code = ast.unparse(self.tree)
             output.write_text(edited_code)
             print(f'Docstring templates written to {output}')
-        else:
-            print(
-                f'No missing docstrings found in {self.source_file}; no changes made.'
-            )
 
-    def handle_missing_docstring(
-        self, node: ast.AsyncFunctionDef | ast.ClassDef | ast.FunctionDef | ast.Module
-    ) -> ast.AsyncFunctionDef | ast.ClassDef | ast.FunctionDef | ast.Module:
-        suggested_docstring = self.docstring_generator.suggest_docstring(
-            node, indent=0 if isinstance(node, ast.Module) else node.col_offset + 4
+    def handle_missing_docstring(self, docstring_node: DocstringNode) -> DocstringNode:
+        suggested_docstring = self.docstring_converter.suggest_docstring(
+            docstring_node,
+            indent=0
+            if isinstance(docstring_node.node, ast.Module)
+            else docstring_node.node.col_offset + 4,
         )
-        docstring_node = ast.Expr(ast.Constant(suggested_docstring))
+        docstring_ast_node = ast.Expr(ast.Constant(suggested_docstring))
 
         if (
-            current_docstring := ast.get_docstring(node)
-        ) is not None and current_docstring.strip() == '':
+            docstring_node.docstring is not None
+            and docstring_node.docstring.strip() == ''
+        ):
             # If the docstring is empty, we replace it with the suggested docstring
-            node.body[0] = docstring_node
+            docstring_node.node.body[0] = docstring_ast_node
         else:
             # If the docstring is missing, we insert the suggested docstring
-            node.body.insert(0, docstring_node)
-        return ast.fix_missing_locations(node)
+            docstring_node.node.body.insert(0, docstring_ast_node)
 
-    def process_file(self) -> ast.Module:
-        self.tree = self.visit(self.tree)
+        docstring_node.node = ast.fix_missing_locations(docstring_node.node)
+
+        return docstring_node
+
+    def process_file(self) -> None:
+        super().process_file()
         self.save()
-        return self.tree

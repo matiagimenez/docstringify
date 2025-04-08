@@ -2,14 +2,17 @@
 
 from __future__ import annotations
 
+import ast
 import textwrap
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
+from ..components import Function
 from ..exceptions import InvalidDocstringError
 
 if TYPE_CHECKING:
-    from ..components import Function, Parameter
+    from ..components import Parameter
+    from ..nodes.base import DocstringNode
 
 
 class DocstringConverter(ABC):
@@ -71,3 +74,21 @@ class DocstringConverter(ABC):
             raise InvalidDocstringError(type(docstring).__name__)
 
         return textwrap.indent(sep.join(docstring), prefix)
+
+    def suggest_docstring(
+        self,
+        docstring_node: DocstringNode,
+        indent: int = 0,
+    ) -> str:
+        if isinstance(docstring_node.node, ast.AsyncFunctionDef | ast.FunctionDef):
+            return self.to_function_docstring(
+                Function(
+                    docstring_node.extract_arguments(), docstring_node.extract_returns()
+                ),
+                indent=indent,
+            )
+
+        if isinstance(docstring_node.node, ast.Module):
+            return self.to_module_docstring(docstring_node.module_name)
+
+        return self.to_class_docstring(docstring_node.name, indent=indent)
