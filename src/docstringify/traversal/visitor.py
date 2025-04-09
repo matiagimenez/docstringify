@@ -37,7 +37,6 @@ class DocstringVisitor(ast.NodeVisitor):
             print(f'No missing docstrings found in {self.source_file}.')
         else:
             for docstring_node in self.missing_docstrings:
-                # TODO: need to print full path for node name
                 print(
                     f'{docstring_node.fully_qualified_name} is missing a docstring',
                     file=sys.stderr,
@@ -51,7 +50,7 @@ class DocstringVisitor(ast.NodeVisitor):
             print()
 
     def process_docstring(self, docstring_node: DocstringNode) -> DocstringNode:
-        if docstring_node.docstring is None or docstring_node.docstring.strip() == '':
+        if docstring_node.docstring_required and not docstring_node.docstring:
             self.missing_docstrings.append(docstring_node)
 
         self.docstrings_inspected += 1

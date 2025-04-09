@@ -45,10 +45,7 @@ class DocstringTransformer(ast.NodeTransformer, DocstringVisitor):
         )
         docstring_ast_node = ast.Expr(ast.Constant(suggested_docstring))
 
-        if (
-            docstring_node.docstring is not None
-            and docstring_node.docstring.strip() == ''
-        ):
+        if docstring_node.docstring is not None:
             # If the docstring is empty, we replace it with the suggested docstring
             docstring_node.ast_node.body[0] = docstring_ast_node
         else:

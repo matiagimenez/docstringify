@@ -76,7 +76,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     for file in args.filenames:
         processor = get_docstring_processor(file)
         processor.process_file()
-        missing_docstrings += processor.missing_docstrings
+        missing_docstrings += len(processor.missing_docstrings)
         docstrings_processed += processor.docstrings_inspected
 
     if docstrings_processed and (

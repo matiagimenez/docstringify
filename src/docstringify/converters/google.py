@@ -2,8 +2,14 @@
 
 from __future__ import annotations
 
-from ..components import DESCRIPTION_PLACEHOLDER, NO_DEFAULT, Function, Parameter
+from typing import TYPE_CHECKING
+
+from ..components import DESCRIPTION_PLACEHOLDER, NO_DEFAULT, Parameter
 from .base import DocstringConverter
+
+if TYPE_CHECKING:
+    from ..nodes.base import DocstringNode
+    from ..nodes.function import FunctionDocstringNode
 
 
 class GoogleDocstringConverter(DocstringConverter):
@@ -14,7 +20,11 @@ class GoogleDocstringConverter(DocstringConverter):
             quote=quote,
         )
 
-    def to_function_docstring(self, function: Function, indent: int) -> str:
+    def to_function_docstring(
+        self, docstring_node: FunctionDocstringNode, indent: int
+    ) -> str:
+        function = docstring_node.to_function()
+
         docstring = [DESCRIPTION_PLACEHOLDER]
 
         if parameters_section := self.parameters_section(function.parameters):
@@ -37,8 +47,8 @@ class GoogleDocstringConverter(DocstringConverter):
             return f'{return_type}: {DESCRIPTION_PLACEHOLDER}'
         return ''
 
-    def to_module_docstring(self, module_name: str) -> str:
+    def to_module_docstring(self, docstring_node: DocstringNode) -> str:
         return self.quote_docstring(DESCRIPTION_PLACEHOLDER, indent=0)
 
-    def to_class_docstring(self, class_name: str, indent: int) -> str:
+    def to_class_docstring(self, docstring_node: DocstringNode, indent: int) -> str:
         return self.quote_docstring(DESCRIPTION_PLACEHOLDER, indent=indent)

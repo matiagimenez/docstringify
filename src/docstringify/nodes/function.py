@@ -8,6 +8,7 @@ from ..components import (
     NO_DEFAULT,
     PARAMETER_TYPE_PLACEHOLDER,
     RETURN_TYPE_PLACEHOLDER,
+    Function,
     Parameter,
 )
 from .base import DocstringNode
@@ -39,6 +40,11 @@ class FunctionDocstringNode(DocstringNode):
         )
         self.is_instance_method: bool = (
             self.is_method and not self.is_class_method and not self.is_static_method
+        )
+
+        # don't require docstring for the __init__ method if the class has a docstring
+        self.docstring_required: bool = not (
+            self.is_method and self.name == '__init__' and self.parent.docstring
         )
 
         self.arguments: ast.arguments | None = getattr(node, 'args', None)
@@ -157,3 +163,6 @@ class FunctionDocstringNode(DocstringNode):
         ):
             return RETURN_TYPE_PLACEHOLDER
         return None
+
+    def to_function(self) -> Function:
+        return Function(self.extract_arguments(), self.extract_returns())

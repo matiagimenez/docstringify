@@ -7,7 +7,6 @@ import textwrap
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
-from ..components import Function
 from ..exceptions import InvalidDocstringError
 
 if TYPE_CHECKING:
@@ -27,15 +26,15 @@ class DocstringConverter(ABC):
         self._quote = quote
 
     @abstractmethod
-    def to_class_docstring(self, class_name: str, indent: int) -> str:
+    def to_class_docstring(self, docstring_node: DocstringNode, indent: int) -> str:
         pass
 
     @abstractmethod
-    def to_function_docstring(self, function: Function, indent: int) -> str:
+    def to_function_docstring(self, docstring_node: DocstringNode, indent: int) -> str:
         pass
 
     @abstractmethod
-    def to_module_docstring(self, module_name: str) -> str:
+    def to_module_docstring(self, docstring_node: DocstringNode) -> str:
         pass
 
     @abstractmethod
@@ -79,16 +78,15 @@ class DocstringConverter(ABC):
         self,
         docstring_node: DocstringNode,
         indent: int = 0,
-    ) -> str:
+    ) -> str | None:
         if isinstance(docstring_node.ast_node, ast.AsyncFunctionDef | ast.FunctionDef):
-            return self.to_function_docstring(
-                Function(
-                    docstring_node.extract_arguments(), docstring_node.extract_returns()
-                ),
-                indent=indent,
+            return (
+                self.to_function_docstring(docstring_node, indent=indent)
+                if docstring_node.docstring_required
+                else None
             )
 
         if isinstance(docstring_node.ast_node, ast.Module):
-            return self.to_module_docstring(docstring_node.module_name)
+            return self.to_module_docstring(docstring_node)
 
-        return self.to_class_docstring(docstring_node.name, indent=indent)
+        return self.to_class_docstring(docstring_node, indent=indent)

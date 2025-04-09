@@ -33,13 +33,16 @@ class DocstringNode:
     ) -> None:
         self.module_name: str = module_name
         self.parent: DocstringNode | None = parent
+        self.docstring_required: bool = True
 
         self.ast_node: (
             ast.Module | ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef
         ) = node
         self.name: str = getattr(node, 'name', self.module_name)
 
-        self.docstring = ast.get_docstring(node)
+        docstring = ast.get_docstring(node)
+        self.docstring = docstring if docstring is None else docstring.strip()
+
         self.get_source_segment: Callable[[ast.AST], str] = partial(
             ast.get_source_segment, source_code
         )
