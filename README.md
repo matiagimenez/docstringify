@@ -1,5 +1,54 @@
-# docstringify
+# Docstringify
 Flag missing docstrings and, optionally, generate them from signatures and type annotations.
+
+## About
+
+Given a file, `test.py`, with the following contents:
+
+```python
+def say_hello(name: str = 'World') -> None:
+    print(f'Hello, {name}!')
+```
+
+You can use Docstringify in three modes:
+
+1. Flag missing docstrings:
+    ```
+    test is missing a docstring
+    test.say_hello is missing a docstring
+    ```
+2. Suggest docstring templates based on type annotations:
+    ```
+    test is missing a docstring
+    Hint:
+    """__description__"""
+  
+    test.say_hello is missing a docstring
+    Hint:
+    """
+    __description__
+  
+    Parameters
+    ----------
+    name : str, default="World"
+        __description__
+    """
+    ```
+3. Add docstring templates to source code files:
+    ```python
+    """__description__"""
+  
+    def say_hello(name: str = 'World') -> None:
+        """
+        __description__
+  
+        Parameters
+        ----------
+        name : str, default="World"
+            __description__
+        """
+        print(f'Hello, {name}!')
+    ```
 
 ## Usage
 
@@ -119,3 +168,7 @@ Docstring templates written to /.../test_docstringify.py
 ```
 
 If you want to overwrite the file with the edits, pass `overwrite=True` to `DocstringTransformer()`.
+
+## Contributing
+
+Please consult the [contributing guidelines](https://github.com/stefmolin/docstringify/blob/main/CONTRIBUTING.md).
