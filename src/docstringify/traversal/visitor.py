@@ -45,9 +45,12 @@ class DocstringVisitor(ast.NodeVisitor):
 
     def handle_missing_docstring(self, docstring_node: DocstringNode) -> DocstringNode:
         if self.docstring_converter:
-            print('Hint:')
-            print(self.docstring_converter.suggest_docstring(docstring_node))
-            print()
+            print(
+                'Hint:',
+                self.docstring_converter.suggest_docstring(docstring_node),
+                '',
+                sep='\n',
+            )
 
     def process_docstring(self, docstring_node: DocstringNode) -> DocstringNode:
         if docstring_node.docstring_required and not docstring_node.docstring:
