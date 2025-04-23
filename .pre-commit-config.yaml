@@ -11,6 +11,14 @@ repos:
       - id: end-of-file-fixer
       - id: trailing-whitespace
 
+  - repo: local
+    hooks:
+      - id: docstringify
+        name: docstringify
+        entry: docstringify --make-changes-inplace numpydoc
+        language: python
+        types: [python]
+
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.11.6
     hooks:
