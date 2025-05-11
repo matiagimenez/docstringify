@@ -1,0 +1,46 @@
+# This workflow automatically updates pre-commit hooks in the repository.
+# It runs on a schedule (every day at 2 AM UTC) and can also be triggered manually.
+# The workflow checks out the repository, installs pre-commit, and runs the autoupdate command.
+# If there are any updates, it creates a pull request with the changes.
+
+name: Pre-commit auto-update
+
+on:
+    schedule:
+        - cron: '0 2 * * *'
+    workflow_dispatch: # Allows manual triggering of the workflow
+
+permissions:
+    contents: read
+
+jobs:
+    auto-update:
+        permissions:
+            contents: write
+            pull-requests: write
+
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-python@v4
+              with:
+                  python-version: '3.11'
+
+            - name: Install pre-commit
+              run: pip install pre-commit
+
+            - name: Autoupdate pre-commit hooks
+              working-directory: '.'
+              run: pre-commit autoupdate
+
+            - name: Create Pull Request
+              uses: peter-evans/create-pull-request@v7
+              with:
+                  token: ${{ secrets.GITHUB_TOKEN }}
+                  branch: chore/pre-commit-autoupdate
+                  title: Update pre-commit hooks
+                  commit-message: Update pre-commit hooks
+                  body: |
+                      This PR was created automatically by the pre-commit autoupdate workflow.
+                      It updates the pre-commit hooks to their latest versions.
+                  labels: update
